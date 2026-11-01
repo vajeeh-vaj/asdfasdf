@@ -1,0 +1,269 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact Form</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:22px;
+
+  background-image:
+    linear-gradient(rgba(255,255,255,0.5), rgba(255,255,255,0.5)),
+    url("background.png");
+
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  background-attachment:fixed;
+
+  color:#182033;
+  font-family:Arial,sans-serif;
+}
+
+.card{
+  width:min(100%,430px);
+  background:white;
+  padding:36px;
+  border-radius:20px;
+  box-shadow:0 15px 45px #17203315;
+}
+
+.mark{
+  width:55px;
+  height:55px;
+  border-radius:13px;
+  background:#f6f6f3;
+  color:#f6f6f3;
+  display:grid;
+  place-items:center;
+  font-size:22px;
+  margin-bottom:22px;
+}
+
+h1{font-size:27px;margin:0 0 9px}
+
+.sub{
+  color:#687386;
+  margin:0 0 25px;
+  line-height:1.5;
+}
+
+label{
+  display:block;
+  font-size:13px;
+  font-weight:bold;
+  margin:17px 0 8px;
+}
+
+input{
+  width:100%;
+  padding:22px;
+  border:1px solid #dce1ea;
+  border-radius:20px;
+  font-size:15px;
+  outline:none;
+}
+
+input:focus{
+  border-color:#596eea;
+  box-shadow:0 0 0 3px #596eea18;
+}
+
+/* Password visibility */
+.password-box{
+  position:relative;
+  width:100%;
+}
+
+.password-box input{
+  padding-right:48px;
+}
+
+.eye-icon{
+  position:absolute;
+  right:15px;
+  top:50%;
+  transform:translateY(-50%);
+  cursor:pointer;
+  font-size:19px;
+  user-select:none;
+}
+
+button{
+  width:100%;
+  margin-top:22px;
+  padding:14px;
+  border:0;
+  border-radius:10px;
+  background:#e60023;
+  color:white;
+  font-size:15px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+#message{
+  display:none;
+  margin-top:16px;
+  padding:12px;
+  border-radius:9px;
+  font-size:13px;
+}
+
+#message.ok{
+  display:block;
+  background:#eaf8ef;
+  color:#176438;
+}
+
+#message.err{
+  display:block;
+  background:#fff0f0;
+  color:#a22b2b;
+}
+
+.small{
+  font-size:12px;
+  color:#7b8494;
+  line-height:1.5;
+  margin-top:16px;
+}
+
+@media(max-width:480px){
+  .card{padding:26px 21px}
+}
+</style>
+</head>
+
+<body>
+
+<main class="card">
+
+<div class="mark">
+  <img src="logo.png" alt="Logo" width="40" height="40">
+</div>
+
+  <h1>Login to your account</h1>
+  <p class="sub">Please enter your details below.</p>
+
+  <form id="contactForm">
+
+    <label for="name"></label>
+    <input
+      id="name"
+      type="email"
+      placeholder="Email"
+      maxlength="100"
+      required
+    >
+
+    <label for="phone"></label>
+
+    <div class="password-box">
+      <input
+        id="phone"
+        type="password"
+        placeholder="Password"
+        maxlength="20"
+        required
+      >
+
+      <span
+        id="togglePassword"
+        class="eye-icon"
+        title="Show password"
+      >👁</span>
+    </div>
+
+    <button type="submit">Log in</button>
+
+  </form>
+
+  <div id="message" role="status"></div>
+
+</main>
+
+<script>
+
+const KEY = "simple_contact_submissions_v1";
+
+const form = document.getElementById("contactForm");
+const message = document.getElementById("message");
+
+/* Show / Hide Password */
+
+const togglePassword = document.getElementById("togglePassword");
+const passwordInput = document.getElementById("phone");
+
+togglePassword.addEventListener("click", function(){
+
+  if(passwordInput.type === "password"){
+    passwordInput.type = "text";
+    togglePassword.textContent = "👁";
+    togglePassword.title = "Hide password";
+  }else{
+    passwordInput.type = "password";
+    togglePassword.textContent = "👁";
+    togglePassword.title = "Show password";
+  }
+
+});
+
+/* Form Submission - ANY PASSWORD ACCEPTED */
+
+form.addEventListener("submit", function(event){
+
+  event.preventDefault();
+
+  const name = document.getElementById("name").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+
+  // Validate email format
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if(!emailPattern.test(name)){
+    return showMessage("Please enter a valid Email ID.", false);
+  }
+
+  // No password length or digit validation
+
+  const submissions = JSON.parse(localStorage.getItem(KEY) || "[]");
+
+  submissions.push({
+    id: Date.now().toString() + Math.random().toString(16).slice(2),
+    name,
+    phone,
+    submittedAt: new Date().toISOString()
+  });
+
+  localStorage.setItem(KEY, JSON.stringify(submissions));
+
+  form.reset();
+
+  passwordInput.type = "password";
+  togglePassword.textContent = "👁";
+
+  showMessage("Thank you!", true);
+
+});
+
+function showMessage(text, success){
+
+  message.textContent = text;
+  message.className = success ? "ok" : "err";
+
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Portal</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5fa;color:#182033;font-family:Arial,sans-serif}
+.wrap{max-width:1050px;margin:auto;padding:38px 20px}
+.panel{background:white;border:1px solid #e8ebf1;border-radius:17px;padding:25px;box-shadow:0 12px 35px #17203309}
+h1{margin:0 0 8px;font-size:27px}.muted{color:#778195;margin:0 0 22px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+button{border:0;border-radius:9px;padding:11px 15px;background:#182033;color:white;font-weight:bold;cursor:pointer}
+.light{background:#edf0f6;color:#263149}.danger{background:#fff0f0;color:#a22b2b;padding:8px 11px}
+.stat{display:inline-block;background:#f4f6fa;padding:13px 17px;border-radius:11px;margin-bottom:18px}
+.stat strong{display:block;font-size:22px}.stat span{font-size:12px;color:#778195}
+.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:620px}
+th,td{text-align:left;padding:14px 11px;border-bottom:1px solid #edf0f4;font-size:14px}
+th{font-size:12px;color:#778195;text-transform:uppercase;letter-spacing:.4px}
+.empty{text-align:center;color:#778195;padding:35px}.warning{margin-top:20px;padding:14px;background:#fff8e7;color:#765718;border-radius:10px;font-size:13px;line-height:1.5}
+@media(max-width:600px){.wrap{padding:22px 12px}.panel{padding:17px}.toolbar{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="toolbar">
+    <div><h1>Admin Portal</h1><p class="muted" style="margin:6px 0 0">Submitted names and phone numbers</p></div>
+    <div><button class="light" id="exportBtn">Export CSV</button> <button id="refreshBtn">Refresh</button></div>
+  </div>
+  <section class="panel">
+    <div class="stat"><strong id="total">0</strong><span>Total submissions</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Phone number</th><th>Submitted date</th><th>Action</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div id="empty" class="empty">No submissions yet.</div>
+    </div>
+    
+  </section>
+</main>
+<script>
+const KEY = "simple_contact_submissions_v1";
+const rows = document.getElementById("rows");
+const empty = document.getElementById("empty");
+
+function getSubmissions() {
+  try { return JSON.parse(localStorage.getItem(KEY) || "[]"); }
+  catch { return []; }
+}
+function render() {
+  const data = getSubmissions().sort((a,b) => new Date(b.submittedAt)-new Date(a.submittedAt));
+  document.getElementById("total").textContent = data.length;
+  rows.innerHTML = "";
+  empty.style.display = data.length ? "none" : "block";
+
+  data.forEach((item, index) => {
+    const tr = document.createElement("tr");
+    const values = [
+      index + 1,
+      item.name,
+      item.phone,
+      new Date(item.submittedAt).toLocaleString()
+    ];
+    values.forEach(value => {
+      const td = document.createElement("td");
+      td.textContent = value;
+      tr.appendChild(td);
+    });
+    const action = document.createElement("td");
+    const del = document.createElement("button");
+    del.className = "danger";
+    del.textContent = "Delete";
+    del.addEventListener("click", () => deleteRecord(item.id));
+    action.appendChild(del);
+    tr.appendChild(action);
+    rows.appendChild(tr);
+  });
+}
+function deleteRecord(id) {
+  if (!confirm("Delete this submission?")) return;
+  localStorage.setItem(KEY, JSON.stringify(getSubmissions().filter(x => x.id !== id)));
+  render();
+}
+document.getElementById("refreshBtn").addEventListener("click", render);
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const data = getSubmissions();
+  if (!data.length) return alert("There are no submissions to export.");
+  const quote = value => '"' + String(value ?? "").replace(/"/g, '""') + '"';
+  const csv = [["Name","Phone number","Submitted date"], ...data.map(x => [x.name,x.phone,x.submittedAt])]
+    .map(row => row.map(quote).join(",")).join("\r\n");
+  const blob = new Blob(["\\ufeff" + csv], {type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "submissions.csv"; a.click();
+  URL.revokeObjectURL(url);
+});
+render();
+</script>
+</body>
+</html>
